@@ -20,7 +20,7 @@ import { countries } from './../resources/countries';
 import { teams } from './../resources/teams';
 
 import { requiredValidator, emailValidator, phoneValidator, biographyValidator } from './../validators'
-import {getUser, logout, refreshToken} from '../api'
+import {getUser, getUser2, logout, refreshToken} from '../api'
 import { NOTIFICATION_TYPES } from '../constants';
 
 const countriesData = countries.map(country => country.name);
@@ -35,29 +35,36 @@ const Profile = () => {
         const history = useHistory();
 
         React.useEffect(() => {
-            getUser.then(user => {
-                console.log("getUser", user)
-            }).catch(err => {
-                // expired or invalid token
-                let message = err.message
-                let {status, statusText} = err.response
-                console.log(status, statusText, message)
-                let token = localStorage.getItem("token")
-                if(token !== null){
-                    refreshToken(token).then(data => {
-                        // refreshed token
-                        console.log(data)
-                        let newToken = data.data
-                        localStorage.setItem("token", newToken)
-                    }).catch(err => {
-                        // invalid token
-                        logout()
-                        onHasNotification(NOTIFICATION_TYPES.Error, "Invalid Token: Required new login")
-                        history.push('/login')
-                        console.log(err)
+            if(JSON.parse(localStorage.getItem("isAuth"))){
+                getUser2().then(user => {
+                        console.log("getUser", user)
                     })
-                }
-            })
+                    .catch(err => {
+                        // expired or invalid token
+                        let message = err.message
+                        let {status, statusText} = err.response
+                        console.log(status, statusText, message)
+                        let token = localStorage.getItem("token")
+                        if(token !== null){
+                            refreshToken(token).then(data => {
+                                // refreshed token
+                                console.log(data)
+                                let newToken = data.data
+                                localStorage.setItem("token", newToken)
+                            }).catch(err => {
+                                // invalid token
+                                // logout()
+                                onHasNotification(NOTIFICATION_TYPES.Error, "Invalid Token: Required new login")
+                                history.push('/login')
+                                console.log(err)
+                            })
+                        }else{
+                            logout()
+                            onHasNotification(NOTIFICATION_TYPES.Error, "Token Not available: Required new login")
+                            history.push('/login')
+                        }
+                    })
+            }
         }, [])
 
         const onSubmit = React.useCallback(

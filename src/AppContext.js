@@ -13,7 +13,8 @@ export const AppContext = React.createContext({
     biography: '',
     teamId: null,
     onLanguageChange: () => {},
-    onProfileChange: () => {}
+    onProfileChange: () => {},
+    onHasNotification: (type, msg) => {}
 });
 
 AppContext.displayName = 'AppContext';

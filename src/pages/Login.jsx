@@ -5,9 +5,9 @@ import { Form, Field, FormElement } from "@progress/kendo-react-form"
 
 import { useHistory } from 'react-router-dom';
 import {loginUser} from '../api'
-import Spinner from '../components/spinner/spinner'
 import { AppContext } from '../AppContext';
 import { NOTIFICATION_TYPES } from '../constants';
+import { Loader } from '@progress/kendo-react-indicators';
 
 const Login = (props) => {
 
@@ -50,7 +50,6 @@ const Login = (props) => {
     }
 
     return <>
-    {load && <Spinner />}
         <Form
             render={(formRenderProps) => (
             <FormElement
@@ -76,11 +75,13 @@ const Login = (props) => {
             </fieldset>
             <div className="k-form-buttons">
                 <button
+                disabled={load}
                 type={"button"}
                 onClick={loginHandler}
+                style={{width: "200px", height: "60px"}}
                 className="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base"
                 >
-                Login
+                    {load ? <><Loader size='large' type='pulsing' /> Loading</> : <>Login</> }
                 </button>
             </div>
             </FormElement>
