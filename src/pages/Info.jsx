@@ -1,13 +1,46 @@
 
 import * as React from 'react';
+import {useHistory} from 'react-router-dom'
 
 import { useLocalization } from '@progress/kendo-react-intl';
 
 import kendoka from '../assets/kendoka.png';
 import github from '../assets/github-icon.svg';
+import { getUser, logout } from '../api';
+import { getErrorMessage, LOG } from '../logs';
+import { NOTIFICATION_TYPES } from '../constants';
+import { axiosInstance } from '../axios-config';
 
-const Info = () => {
+const Info = (props) => {
     const localizationService = useLocalization();
+
+    let history = useHistory()
+    const { onHasNotification } = props
+
+    React.useEffect(() => {
+        if(JSON.parse(localStorage.getItem("isAuth"))){
+            getUser().then(user => {
+                    LOG.logNetworkErrors && console.log("getUser", user)
+                })
+                .catch(err => {
+                    // expired or invalid token or cancelled api request
+                    LOG.logNetworkErrors && console.log("inside catch {}", err)
+                    let token = localStorage.getItem("token")
+                    if(err?.response?.status === 400){
+                        LOG.logNetworkErrors && console.log("status 400")
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(4))
+                        logout()
+                        history.push('/login')
+                    }else if(token === null || token === undefined ){ 
+                        LOG.logNetworkErrors && console.log("token null")
+                        logout()
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(5))
+                        history.push('/login')
+                    }
+                })
+        }
+    }, [])
+
     return (
         <div id="Info" className="info-page main-content">
             <div className="content">

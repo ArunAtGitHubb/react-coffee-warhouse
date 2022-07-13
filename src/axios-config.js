@@ -1,53 +1,72 @@
 import axios from 'axios'
 import { logout, refreshToken } from './api'
 import { BASE_URL } from './constants'
+import { LOG } from './logs'
 
 export const axiosInstance = axios.create({
     baseURL: BASE_URL,
 })
 
+window.addEventListener("storage", (e) => {
+    LOG.logGeneral && console.log("storage->token: ", e.storageArea.token)
+    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${e.storageArea.token}`
+    LOG.logNetwork && console.log(axiosInstance.defaults.headers)
+})
+
 let token = localStorage.getItem("token")
 
 if(token !== null){
-    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`
+    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`
 }
 
-window.addEventListener("storage", (e) => {
-    console.log("storage->token: ", e.storageArea.token)
-    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${e.storageArea.token}`
-})
+const CancelToken = axios.CancelToken;
+let cancel;
+let url;
 
 axiosInstance.interceptors.request.use(function (config) {
-    console.log("interceptor request", config)
-    return config;
+    LOG.logNetwork && console.log("interceptor request", config)
+
+    LOG.logNetwork && console.log(url, config.url)
+
+    if (url === config.url && cancel) {
+        cancel()
+    }
+
+    config.cancelToken =  new CancelToken((c) =>{
+        LOG.logGeneral && console.log(c)
+        url = config.url
+        cancel = c;
+    })
+
+    return config
     }, function (error) {
-    console.log("interceptor request", error)
+    LOG.logNetworkErrors && console.log("interceptor request", error)
     return Promise.reject(error);
 });
 
 axiosInstance.interceptors.response.use(function (response) {
     // Successfull responses like range from 2xx
-    console.log("interceptor response", response)
+    LOG.logNetwork && console.log("interceptor response", response)
     return response;
 }, function (error) {
+    LOG.logNetworkErrors && console.log("interceptor response error", error)
     // Unsuccessfull responses range from 4xx, like token expiry
-    let statusCode = error.response.status
-    if(statusCode === 401 || statusCode === 403){
-        let token = localStorage.getItem("token")
-        if(token !== null){
-            refreshToken(token).then(data => {
-                // refreshed token
-                console.log(data)
-                let newToken = data.data
-                localStorage.setItem("token", newToken)
-            }).catch(err => {
-                // invalid token
-                logout()
-                window.location.href = "/login"
-                console.log("Invalid Token", err)
-            })
+        let statusCode = error?.response?.status 
+        if(statusCode === 401){
+            let token = localStorage.getItem("token")
+            if(token !== null){
+                refreshToken(token).then(data => {
+                    // refreshed token
+                    LOG.logNetwork && console.log("inside refreshToken then {}", data)
+                    let newToken = data.data.data
+                    localStorage.setItem("token", newToken)
+                    axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`
+                }).catch(err => {
+                    // invalid token
+                    logout()
+                    LOG.logNetworkErrors && console.log("inside refreshToken catch {}")
+                })
+            }
         }
-    }
-    console.log("interceptor response error", error)
     return Promise.reject(error);
     });

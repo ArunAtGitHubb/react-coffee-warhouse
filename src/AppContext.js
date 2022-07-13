@@ -12,9 +12,11 @@ export const AppContext = React.createContext({
     isInPublicDirectory: false,
     biography: '',
     teamId: null,
+    source: null,
+    hasSource: false,
     onLanguageChange: () => {},
     onProfileChange: () => {},
-    onHasNotification: (type, msg) => {}
+    onHasNotification: (type, msg) => {},
 });
 
 AppContext.displayName = 'AppContext';

@@ -1,14 +1,29 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import './App.scss';
 import App from './App';
 
 import * as serviceWorker from './serviceWorker';
+import { Provider } from 'react-redux'
+import { combineReducers, createStore } from 'redux'
+import { configureStore } from '@reduxjs/toolkit'
 
-import './App.scss';
+import { profileReducer } from './store/reducers/profileReducer';
+
+
+const store = configureStore({
+  reducer: {
+    profile: profileReducer
+  }
+})
+
+// const store = createStore(rootReducer) // @deprecated
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );

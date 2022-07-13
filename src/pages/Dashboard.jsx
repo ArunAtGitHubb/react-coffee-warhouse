@@ -1,5 +1,6 @@
 
 import * as React from 'react';
+import {connect} from 'react-redux'
 
 import { ButtonGroup, Button } from '@progress/kendo-react-buttons';
 import { DateRangePicker } from '@progress/kendo-react-dateinputs';
@@ -11,13 +12,16 @@ import { Grid, Column, ColumnMenu } from './../components/Grid';
 import { Chart } from './../components/Chart';
 import { FullNameCell, FlagCell, OnlineCell, RatingCell, EngagementCell, CurrencyCell } from './../components/GridCells';
 
-import { AppContext } from './../AppContext'
-
 import { employees } from './../resources/employees';
 import { teams } from './../resources/teams';
 import { orders } from './../resources/orders';
+import { useHistory } from 'react-router-dom';
+import { getUser, logout } from '../api';
+import { getErrorMessage, LOG } from '../logs';
+import { NOTIFICATION_TYPES } from '../constants';
+import * as actions from '../store/actions'
 
-const Dashboard = () => {
+const Dashboard = (props) => {
     const [data, setData] = React.useState(employees);
     const [isTrend, setIsTrend] = React.useState(true);
     const [isMyTeam, setIsMyTeam] = React.useState(true);
@@ -33,7 +37,7 @@ const Dashboard = () => {
         isChartChangeRef.current = false;
     });
 
-    const { teamId } = React.useContext(AppContext);
+    const { teamId } = props
     const gridFilterExpression = isMyTeam ? {
             logic: "and",
             filters: [{ field: "teamId", operator: "eq", value: teamId }]
@@ -74,6 +78,33 @@ const Dashboard = () => {
         () => setIsMyTeam(false),
         [setIsMyTeam]
     );
+
+    let history = useHistory()
+    const {onHasNotification} = props
+
+    React.useEffect(() => {
+        if(JSON.parse(localStorage.getItem("isAuth"))){
+            getUser().then(user => {
+                    LOG.logNetworkErrors && console.log("getUser", user)
+                })
+                .catch(err => {
+                    // expired or invalid token or cancelled api request
+                    LOG.logNetworkErrors && console.log("inside catch {}", err)
+                    let token = localStorage.getItem("token")
+                    if(err?.response?.status === 400){
+                        LOG.logNetworkErrors && console.log("status 400")
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(4))
+                        logout()
+                        history.push('/login')
+                    }else if(token === null || token === undefined ){ 
+                        LOG.logNetworkErrors && console.log("token null")
+                        logout()
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(5))
+                        history.push('/login')
+                    }
+                })
+        }
+    }, [])
 
     return (
         <div id="Dashboard" className="dashboard-page main-content">
@@ -145,5 +176,17 @@ const Dashboard = () => {
     );
 }
 
-export default Dashboard;
+const mapStateToProps = (state) => {
+    return {
+        ...state.profile
+    }
+    }
+    
+    const mapDispatchToProps = (dispatch) => {
+    return {
+        onLanguageChange: (event) => dispatch(actions.onLanguageChange(event))
+    }
+    }
+    
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);
 

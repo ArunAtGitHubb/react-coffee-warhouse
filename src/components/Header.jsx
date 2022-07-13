@@ -8,14 +8,14 @@ import { useLocalization } from '@progress/kendo-react-intl';
 
 import { locales } from './../resources/locales';
 
-import { AppContext } from './../AppContext'
+import {connect} from 'react-redux'
+import * as actions from '../store/actions'
 
 import headerBg from '../assets/header-bg.png';
 import userAvatar from '../assets/user-avatar.jpg';
 
-export const Header = (props) => {
-    const { onButtonClick } = props;
-    const { avatar, localeId, onLanguageChange } = React.useContext(AppContext);
+const Header = (props) => {
+    const { avatar, localeId, onLanguageChange } = props;
     const localizationService = useLocalization();
 
     const currentLanguage = locales.find(item => item.localeId === localeId);
@@ -38,11 +38,13 @@ export const Header = (props) => {
         [avatar, hasImage]
     );
 
+    console.log("props", props)
+
     return (
         <header className="header" style={{ backgroundImage: `url(${headerBg})` }}>
             <div className="nav-container">
                 <div className="menu-button">
-                    <span className={'k-icon k-i-menu'} onClick={onButtonClick}/>
+                    <span className={'k-icon k-i-menu'}/>
                 </div>
 
                 <div className="title">
@@ -55,7 +57,9 @@ export const Header = (props) => {
                         dataItemKey={'localeId'}
                         data={locales}
                         value={currentLanguage}
-                        onChange={onLanguageChange}
+                        onChange={(event) => {
+                            onLanguageChange(event.target.value.localeId)
+                        }}
                     />
                 </div>
                 <Avatar type={'image'} shape={'circle'}>
@@ -70,8 +74,16 @@ export const Header = (props) => {
     );
 }
 
-Header.displayName = 'Header';
-Header.propTypes = {
-    page: PropTypes.string,
-    onButtonClick: PropTypes.func
-};
+const mapStateToProps = (state) => {
+    return {
+        ...state.profile
+    }
+    }
+    
+    const mapDispatchToProps = (dispatch) => {
+    return {
+        onLanguageChange: (localeId) => dispatch(actions.onLanguageChange(localeId))
+    }
+    }
+
+export default connect(mapStateToProps, mapDispatchToProps)(Header)

@@ -1,5 +1,6 @@
 
 import * as React from 'react';
+import * as actions from '../store/actions'
 
 import { useLocalization } from '@progress/kendo-react-intl';
 import { useHistory } from "react-router-dom";
@@ -14,14 +15,14 @@ import { Upload } from './../components/form/Upload';
 import { RadioGroup } from './../components/form/RadioGroup';
 import { Switch } from './../components/form/Switch';
 
-import { AppContext } from './../AppContext'
-
 import { countries } from './../resources/countries';
 import { teams } from './../resources/teams';
 
 import { requiredValidator, emailValidator, phoneValidator, biographyValidator } from './../validators'
 import {getUser, getUser2, logout, refreshToken} from '../api'
 import { NOTIFICATION_TYPES } from '../constants';
+import { getErrorMessage, LOG } from '../logs';
+import {connect} from 'react-redux'
 
 const countriesData = countries.map(country => country.name);
 const teamsData = teams.map(team => ({
@@ -29,51 +30,42 @@ const teamsData = teams.map(team => ({
     label: team.teamName
 }));
 
-const Profile = () => {
-        const {languageId, onLanguageChange, onProfileChange, onHasNotification, ...formValues} = React.useContext(AppContext);
+const Profile = (props) => {
+        const { onHasNotification } = props;
+        const {...formValues} = props
         const localizationService = useLocalization();
         const history = useHistory();
 
-        React.useEffect(() => {
-            if(JSON.parse(localStorage.getItem("isAuth"))){
-                getUser2().then(user => {
-                        console.log("getUser", user)
-                    })
-                    .catch(err => {
-                        // expired or invalid token
-                        let message = err.message
-                        let {status, statusText} = err.response
-                        console.log(status, statusText, message)
-                        let token = localStorage.getItem("token")
-                        if(token !== null){
-                            refreshToken(token).then(data => {
-                                // refreshed token
-                                console.log(data)
-                                let newToken = data.data
-                                localStorage.setItem("token", newToken)
-                            }).catch(err => {
-                                // invalid token
-                                // logout()
-                                onHasNotification(NOTIFICATION_TYPES.Error, "Invalid Token: Required new login")
-                                history.push('/login')
-                                console.log(err)
-                            })
-                        }else{
-                            logout()
-                            onHasNotification(NOTIFICATION_TYPES.Error, "Token Not available: Required new login")
-                            history.push('/login')
-                        }
-                    })
-            }
-        }, [])
+    React.useEffect(() => {
+        if(JSON.parse(localStorage.getItem("isAuth"))){
+            getUser().then(user => {
+                    LOG.logNetworkErrors && console.log("getUser", user)
+                })
+                .catch(err => {
+                    // expired or invalid token or cancelled api request
+                    LOG.logNetworkErrors && console.log("inside catch {}", err)
+                    let token = localStorage.getItem("token")
+                    if(err?.response?.status === 400){
+                        LOG.logNetworkErrors && console.log("status 400")
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(4))
+                        logout()
+                        history.push('/login')
+                    }else if(token === null || token === undefined ){ 
+                        LOG.logNetworkErrors && console.log("token null")
+                        logout()
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(5))
+                        history.push('/login')
+                    }
+                })
+        }
+    }, [])
 
         const onSubmit = React.useCallback(
             (dataItem) => {
-                onProfileChange({dataItem});
-
+                props.onProfileChange(dataItem);
                 history.push('/');
             },
-            [onProfileChange, history]
+            [history]
         );
 
         const onCancelClick = React.useCallback(
@@ -191,4 +183,17 @@ const Profile = () => {
         );
 }
 
-export default Profile;
+const mapStateToProps = (state) => {
+    return {
+        ...state.profile
+    }
+    }
+    
+    const mapDispatchToProps = (dispatch) => {
+    return {
+        onLanguageChange: (event) => dispatch(actions.onLanguageChange(event)),
+        onProfileChange: (dataItem) => dispatch(actions.onProfileChange(dataItem))
+    }
+    }
+    
+export default connect(mapStateToProps, mapDispatchToProps)(Profile);

@@ -4,13 +4,7 @@ import { useHistory, withRouter } from 'react-router-dom';
 import { registerForLocalization, provideLocalizationService } from '@progress/kendo-react-intl';
 import { Drawer, DrawerContent } from '@progress/kendo-react-layout';
 
-import {
-    Notification,
-    NotificationGroup,
-    } from "@progress/kendo-react-notification";
-import { Fade } from "@progress/kendo-react-animation";
-
-import { Header } from './Header.jsx';
+import Header from './Header.jsx';
 
 
 const items = [
@@ -80,7 +74,6 @@ class DrawerRouterContainer extends React.Component {
         return (
             <React.Fragment>
                 <Header
-                    onButtonClick={this.handleClick}
                     page={localizationService.toLanguageString(`custom.${selected}`)}
                 />
                 <Drawer

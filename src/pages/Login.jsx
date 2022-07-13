@@ -1,18 +1,17 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React, { useEffect, useRef, useState} from 'react'
 
 import { Input } from "@progress/kendo-react-inputs";
 import { Form, Field, FormElement } from "@progress/kendo-react-form"
 
 import { useHistory } from 'react-router-dom';
 import {loginUser} from '../api'
-import { AppContext } from '../AppContext';
 import { NOTIFICATION_TYPES } from '../constants';
 import { Loader } from '@progress/kendo-react-indicators';
+import { getErrorMessage, LOG } from '../logs';
 
 const Login = (props) => {
 
     const [load, setLoad] = useState(false)
-    const {onHasNotification} = useContext(AppContext)
     let usernameRef = useRef()
     let passwordRef = useRef()
 
@@ -23,27 +22,27 @@ const Login = (props) => {
         }
     }, [])
 
+    const {onHasNotification} = props
 
     const loginHandler = (data) => {
         let username = usernameRef.current.value
         let password = passwordRef.current.value
-        console.log("clicked", username, password)
         setLoad(true)
         loginUser(username, password).then(data => {
-            console.log(data)
+            LOG.logGeneral && console.log(data)
             setLoad(false)
-            let notification = {type: null, msg: null}
+            let newNotification = {type: null, msg: null}
             if(data.status){
-                notification.msg = "Logged In sucessfully"
-                notification.type = NOTIFICATION_TYPES.Info
+                newNotification.msg = getErrorMessage(1)
+                newNotification.type = NOTIFICATION_TYPES.Info
                 history.push("/profile")
             }else{
-                notification.type = NOTIFICATION_TYPES.Error
-                notification.msg = "Invalid details"
+                newNotification.type = NOTIFICATION_TYPES.Error
+                newNotification.msg = getErrorMessage(2)
             }
-            onHasNotification(notification.type, notification.msg)
+            onHasNotification(newNotification.type, newNotification.msg)
         }).catch(err => {
-            onHasNotification(NOTIFICATION_TYPES.Error, "Log In Failed!")
+            onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(3))
             setLoad(false)
             history.push("/login")
         })
@@ -78,8 +77,7 @@ const Login = (props) => {
                 disabled={load}
                 type={"button"}
                 onClick={loginHandler}
-                style={{width: "200px", height: "60px"}}
-                className="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base"
+                className="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base login-btn"
                 >
                     {load ? <><Loader size='large' type='pulsing' /> Loading</> : <>Login</> }
                 </button>

@@ -11,6 +11,10 @@ import { employees } from './../resources/employees';
 import { images } from './../resources/images';
 import { orders, ordersModelFields } from './../resources/orders';
 import { teams } from './../resources/teams';
+import { getErrorMessage, LOG } from '../logs';
+import { useHistory } from 'react-router-dom';
+import { getUser, logout } from '../api';
+import { NOTIFICATION_TYPES } from '../constants';
 
 const orderEmployees = employees.filter(employee => employee.jobTitle === 'Sales Representative');
 const initialFilterState = { };
@@ -23,7 +27,7 @@ orderEmployees.forEach(employee => {
     }
 });
 
-const Planning = () => {
+const Planning = (props) => {
     const localizationService = useLocalization();
     const [filterState, setFilterState] = React.useState(initialFilterState);
     const [data, setData] = React.useState(orders);
@@ -50,6 +54,33 @@ const Planning = () => {
         },
         [filterState, setFilterState]
     );
+
+    let history = useHistory()
+    const {onHasNotification} = props
+
+    React.useEffect(() => {
+        if(JSON.parse(localStorage.getItem("isAuth"))){
+            getUser().then(user => {
+                    LOG.logNetworkErrors && console.log("getUser", user)
+                })
+                .catch(err => {
+                    // expired or invalid token or cancelled api request
+                    LOG.logNetworkErrors && console.log("inside catch {}", err)
+                    let token = localStorage.getItem("token")
+                    if(err?.response?.status === 400){
+                        LOG.logNetworkErrors && console.log("status 400")
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(4))
+                        logout()
+                        history.push('/login')
+                    }else if(token === null || token === undefined ){ 
+                        LOG.logNetworkErrors && console.log("token null")
+                        logout()
+                        onHasNotification(NOTIFICATION_TYPES.Error, getErrorMessage(5))
+                        history.push('/login')
+                    }
+                })
+        }
+    }, [])
 
     return (
         <div id="Planning" className="planning-page main-content">
