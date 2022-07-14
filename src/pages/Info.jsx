@@ -19,7 +19,7 @@ const Info = (props) => {
 
     React.useEffect(() => {
         if(JSON.parse(localStorage.getItem("isAuth"))){
-            getUser().then(user => {
+            getUser(4).then(user => {
                     LOG.logNetworkErrors && console.log("getUser", user)
                 })
                 .catch(err => {

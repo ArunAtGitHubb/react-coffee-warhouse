@@ -24,8 +24,8 @@ export const getUser2 = () => {
     return axiosInstance.get("/V1/profile/2")
 }
 
-export const getUser = () => new Promise((resolve, reject) => {
-    axiosInstance.get("/V1/profile/2").then(user => {
+export const getUser = (userId) => new Promise((resolve, reject) => {
+    axiosInstance.get("/V1/profile/" + userId).then(user => {
         resolve(user)
     }).catch(err => {
         reject(err)

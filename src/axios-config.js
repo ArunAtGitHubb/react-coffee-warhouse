@@ -21,20 +21,28 @@ if(token !== null){
 
 const CancelToken = axios.CancelToken;
 let cancel;
-let url;
+let requests = []
 
 axiosInstance.interceptors.request.use(function (config) {
     LOG.logNetwork && console.log("interceptor request", config)
 
-    LOG.logNetwork && console.log(url, config.url)
+    LOG.logNetwork && console.log(requests, config.url)
 
-    if (url === config.url && cancel) {
-        cancel()
-    }
+    requests.map((request, idx) => {
+        if(request?.url === config.url){
+            request.cancel()
+            requests.splice(idx, 1)
+        }
+    })
 
     config.cancelToken =  new CancelToken((c) =>{
         LOG.logGeneral && console.log(c)
-        url = config.url
+        let request = {
+            url: config.url,
+            cancel: c
+        }
+
+        requests.push(request)
         cancel = c;
     })
 
@@ -46,6 +54,11 @@ axiosInstance.interceptors.request.use(function (config) {
 
 axiosInstance.interceptors.response.use(function (response) {
     // Successfull responses like range from 2xx
+    requests.map((request, idx) => {
+        if(request.url === response.config.url){
+            requests.splice(idx, 1)
+        }
+    })
     LOG.logNetwork && console.log("interceptor response", response)
     return response;
 }, function (error) {

@@ -60,7 +60,7 @@ const Planning = (props) => {
 
     React.useEffect(() => {
         if(JSON.parse(localStorage.getItem("isAuth"))){
-            getUser().then(user => {
+            getUser(2).then(user => {
                     LOG.logNetworkErrors && console.log("getUser", user)
                 })
                 .catch(err => {
