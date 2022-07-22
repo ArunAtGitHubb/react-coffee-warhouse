@@ -20,7 +20,7 @@ export const loginUser = (username, password) => {
     })
 }
 
-export const getUser2 = () => {
+export const getUser2 = () => { 
     return axiosInstance.get("/V1/profile/2")
 }
 
